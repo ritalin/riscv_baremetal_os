@@ -1,15 +1,38 @@
 #![no_std]
 
+mod uart;
+
+const UART_BASE_ADDRESS: usize = 0x1000_0000;
+
+use core::fmt::Write;
+
+macro_rules! print {
+    ($($args:tt)+) => {
+        let _ = write!(crate::uart::Uart::new(UART_BASE_ADDRESS), $($args)+);
+    };
+}
+
+macro_rules! println {
+    () => {
+        print!("\r\n");
+    };
+    ($fmt:expr) => {
+        print!(concat!($fmt, "\r\n"));
+    };
+    ($fmt:expr, $($args:tt)+) => {
+        print!(concat!($fmt, "\r\n"), $($args)+);
+    };
+}
+
 #[no_mangle]
 pub extern "C" fn __start() -> ! {
-    let uart0 = 0x1000_0000 as *mut u8;
+    let mut uart0 = crate::uart::Uart::new(UART_BASE_ADDRESS);
+    uart0.init();
 
-    // TODO: 複数CPUのときに一斉に出力しあってカオスな結果になる
-    // TODO: 1CPUでは一見良さそうに見えてしまう
-    // TODO: releaseビルドでは、最適化されてちゃんとした出力にならない
-    for c in b"Hello World".iter() {
-        unsafe { *uart0 = *c as u8; }
-    }
+    println!("Hello World.");
+    println!("This is second line.");
+    println!("------------------------");
+    println!("END");
 
     loop {}
 }
