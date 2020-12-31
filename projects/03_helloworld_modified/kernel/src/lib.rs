@@ -29,6 +29,8 @@ pub extern "C" fn __start() -> ! {
     let mut uart0 = crate::uart::Uart::new(UART_BASE_ADDRESS);
     uart0.init();
 
+    // DONE: 最適化でおかしくなる問題は解消
+    // TODO: 複数CPUでポートを取り合う問題は解消せず
     println!("Hello World.");
     println!("This is second line.");
     println!("------------------------");
