@@ -1,6 +1,8 @@
 #![no_std]
+#![feature(llvm_asm)]
 
 mod uart;
+mod rv64;
 
 const UART_BASE_ADDRESS: usize = 0x1000_0000;
 
@@ -43,11 +45,11 @@ use core::panic::PanicInfo;
 #[panic_handler]
 #[no_mangle]
 pub fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+    abort();
 }
 
 #[no_mangle]
 pub extern "C" fn abort() -> ! {
     // 何もせず、無限ループする
-    loop {}
+    loop { rv64::isa::wfi(); }
 }
