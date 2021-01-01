@@ -1,19 +1,17 @@
 #![no_std]
 #![feature(llvm_asm)]
 
-mod uart;
-mod rv64;
-
 const UART_BASE_ADDRESS: usize = 0x1000_0000;
 
-use core::fmt::Write;
-
+#[macro_export]
 macro_rules! print {
-    ($($args:tt)+) => {
-        let _ = write!(crate::uart::Uart::new(UART_BASE_ADDRESS), $($args)+);
-    };
+    ($($args:tt)+) => ({
+        use core::fmt::Write;
+        let _ = write!(crate::uart::Uart::new($crate::UART_BASE_ADDRESS), $($args)+);
+    });
 }
 
+#[macro_export]
 macro_rules! println {
     () => {
         print!("\r\n");
@@ -28,8 +26,8 @@ macro_rules! println {
 
 #[no_mangle]
 pub extern "C" fn __start() -> ! {
-    let mut uart0 = crate::uart::Uart::new(UART_BASE_ADDRESS);
-    uart0.init();
+    crate::uart::Uart::new(UART_BASE_ADDRESS).init();
+    crate::kmem::page::init();
 
     // DONE: 最適化でおかしくなる問題は解消
     // TODO: 複数CPUでポートを取り合う問題は解消せず
@@ -73,6 +71,10 @@ pub extern "C" fn __start() -> ! {
 
 fn kmain() -> ! {
     println!("Transfer to Superviser mode, Success.");
+    println!("mhertid: {}", rv64::cpuid());
+    
+    kmem::page::print_heap();
+
     loop { rv64::isa::wfi(); }
 }
 
@@ -88,3 +90,7 @@ pub extern "C" fn abort() -> ! {
     // 何もせず、無限ループする
     loop { rv64::isa::wfi(); }
 }
+
+mod rv64;
+mod kmem;
+mod uart;

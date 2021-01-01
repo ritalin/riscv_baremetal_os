@@ -28,6 +28,10 @@ impl CpuMode {
     }
 }
 
+pub fn cpuid() -> u64 {
+    return crate::rv64::reg::Tp::read();
+}
+
 pub mod isa {
     #[no_mangle]
     #[inline(always)]

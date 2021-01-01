@@ -45,6 +45,13 @@ impl SAtp {
     }
 }
 impl Tp {
+    pub fn read() -> u64 {
+        unsafe {
+            let mut v;
+            llvm_asm!("mv $0, tp":"=r"(v):::"volatile");
+            return v;
+        }
+    }   
     pub fn write(v: u64) {
         unsafe {
             llvm_asm!("mv tp, $0"::"r"(v):::"volatile");

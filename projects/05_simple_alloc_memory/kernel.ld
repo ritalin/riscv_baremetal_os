@@ -1,9 +1,16 @@
 OUTPUT_ARCH("riscv")
 ENTRY(_entry)
 
+MAX_MEMORY = 128M;
+
+MEMORY
+{
+  ram   (wxa!ri) : ORIGIN = 0x80000000, LENGTH = MAX_MEMORY
+}
+
 SECTIONS 
 {
-    . = 0x80000000;
+    . = ORIGIN(ram);
 
     .text :
     {
