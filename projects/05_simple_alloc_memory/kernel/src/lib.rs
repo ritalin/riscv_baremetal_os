@@ -26,12 +26,14 @@ macro_rules! println {
 
 #[no_mangle]
 pub extern "C" fn __start() -> ! {
-    crate::uart::Uart::new(UART_BASE_ADDRESS).init();
-    crate::kmem::page::init();
+    let hartid = rv64::reg::MHartId::read();
 
     // DONE: 最適化でおかしくなる問題は解消
     // TODO: 複数CPUでポートを取り合う問題は解消せず
-    println!("Hello World.");
+    if hartid == 0 {
+        crate::uart::Uart::new(UART_BASE_ADDRESS).init();
+        println!("Hello World.");
+    }
 
     // Sモードへの移行を予約する
     {
@@ -59,7 +61,6 @@ pub extern "C" fn __start() -> ! {
     }
     // 現在のCPUを保存する
     {
-        let hartid = rv64::reg::MHartId::read();
         rv64::reg::Tp::write(hartid);
     }
     // Sモードに移行する
@@ -70,10 +71,36 @@ pub extern "C" fn __start() -> ! {
 }
 
 fn kmain() -> ! {
-    println!("Transfer to Superviser mode, Success.");
-    println!("mhertid: {}", rv64::cpuid());
-    
-    kmem::page::print_heap();
+    let cpuid = rv64::cpuid();
+    if cpuid == 0 {
+        println!("Transfer to Superviser mode, Success.");
+        println!("mhertid: {}", cpuid);
+        
+        kmem::page::init();
+
+        println!("Allocationg ...");
+
+        let _ = kmem::page::alloc(64);
+        let p1 = kmem::page::alloc(1);
+        let p2 = kmem::page::alloc(1);
+        let _ = kmem::page::alloc(1);
+
+        kmem::page::print_page();
+
+        println!();
+
+        kmem::page::dealloc(p1);
+        kmem::page::dealloc(p2);
+
+        kmem::page::print_page();
+        println!();
+
+        let p3 = kmem::page::alloc(3);
+
+        kmem::page::print_page();
+        println!();
+        println!("{:p}", p3);
+    }
 
     loop { rv64::isa::wfi(); }
 }
